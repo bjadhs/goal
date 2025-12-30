@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Quadrant from '@/components/Quadrant';
-import DateTimeDisplay from '@/components/DateTimeDisplay';
+import Header from '@/components/Header';
 import { supabase } from '@/lib/supabase';
 
 interface Todo {
@@ -38,6 +38,7 @@ export default function Home() {
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quadrantSettings, setQuadrantSettings] = useState<Record<string, string>>({});
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -50,19 +51,36 @@ export default function Home() {
   // Fetch todos from Supabase on mount
   useEffect(() => {
     const fetchTodos = async () => {
-      const { data, error } = await supabase
+      const { data: todosData, error: todosError } = await supabase
         .from('todos')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching todos:', error);
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('quadrant_details')
+        .select('*');
+
+      if (todosError) {
+        console.error('Error fetching todos:', todosError);
         setError('Failed to load todos. Check your connection.');
         setIsLoaded(true);
         return;
       }
 
-      if (data) {
+      if (settingsError && settingsError.code !== '42P01') {
+        // Ignore 42P01 (undefined_table) if user hasn't created table yet, but log others
+        console.error('Error fetching settings:', settingsError);
+      }
+
+      if (settingsData) {
+        const settings: Record<string, string> = {};
+        settingsData.forEach((item: { type: string; subtitle: string }) => {
+          settings[item.type] = item.subtitle;
+        });
+        setQuadrantSettings(settings);
+      }
+
+      if (todosData) {
         const grouped: TodoState = {
           daily: [],
           weekly: [],
@@ -70,7 +88,7 @@ export default function Home() {
           yearly: [],
         };
 
-        data.forEach((todo: DbTodo) => {
+        todosData.forEach((todo: DbTodo) => {
           grouped[todo.type].push({
             id: todo.id,
             text: todo.text,
@@ -182,38 +200,75 @@ export default function Home() {
     }
   };
 
+  const updateSubtitle = async (type: QuadrantType, newSubtitle: string) => {
+    // Optimistic update
+    setQuadrantSettings(prev => ({
+      ...prev,
+      [type]: newSubtitle
+    }));
+
+    const { error } = await supabase
+      .from('quadrant_details')
+      .upsert({ type, subtitle: newSubtitle })
+      .select();
+
+    if (error) {
+      console.error('Error updating subtitle:', error);
+      setError('Failed to save subtitle.');
+      // Revert would require keeping previous state, simple error alert for now
+    }
+  };
+
   const [expandedQuadrant, setExpandedQuadrant] = useState<QuadrantType | null>(null);
 
   // ... (existing useEffect and handlers)
 
+  // Calculate dynamic subtitles
+  const now = new Date();
+
+  // Daily: "Tuesday 30"
+  const dailySubtitle = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric' });
+
+  // Weekly: "w52" (ISO week number calculation)
+  const getWeekNumber = (d: Date) => {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return weekNo;
+  };
+  const weeklySubtitle = `w${getWeekNumber(now)}`;
+
+  // Monthly: "December"
+  const monthlySubtitle = now.toLocaleDateString('en-US', { month: 'long' });
+
+  // Yearly: "2025"
+  const yearlySubtitle = now.getFullYear().toString();
+
   const quadrants: { id: QuadrantType; title: string; subtitle: string; color: string }[] = [
-    { id: 'daily', title: 'Daily', subtitle: "Today's Focus", color: 'blue' },
-    { id: 'weekly', title: 'Weekly', subtitle: 'This Week', color: 'purple' },
-    { id: 'monthly', title: 'Monthly', subtitle: 'This Month', color: 'pink' },
-    { id: 'yearly', title: 'Yearly', subtitle: '2025 Goals', color: 'orange' },
+    { id: 'daily', title: 'Daily', subtitle: dailySubtitle, color: 'blue' },
+    { id: 'weekly', title: 'Weekly', subtitle: weeklySubtitle, color: 'purple' },
+    { id: 'monthly', title: 'Monthly', subtitle: monthlySubtitle, color: 'pink' },
+    { id: 'yearly', title: 'Yearly', subtitle: yearlySubtitle, color: 'orange' },
   ];
 
   if (!isLoaded) {
     return (
-      <div className="h-screen w-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="h-screen w-screen bg-background flex items-center justify-center">
+        <div className="text-foreground text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <main className="h-screen w-screen bg-[#0a0a0a] text-white p-4 font-sans selection:bg-blue-500/30 overflow-hidden flex flex-col relative">
+    <main className="h-screen w-screen bg-background text-foreground p-4 font-sans selection:bg-blue-500/30 overflow-hidden flex flex-col relative">
       {error && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg backdrop-blur text-sm font-medium animate-in fade-in slide-in-from-top-4">
           {error}
         </div>
       )}
-      <header className={`flex-none mb-4 flex flex-col items-center justify-center transition-all duration-300 ${expandedQuadrant ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100'}`}>
-        <h1 className="text-3xl font-black tracking-tighter mb-1 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">
-          GOAL
-        </h1>
-        <DateTimeDisplay />
-      </header>
+
+      <Header isQuadrantExpanded={!!expandedQuadrant} />
 
       <div className={`grid gap-4 flex-1 min-h-0 w-full max-w-7xl mx-auto transition-all duration-300 ${expandedQuadrant ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
         {quadrants.map((q) => {
@@ -223,7 +278,7 @@ export default function Home() {
             <Quadrant
               key={q.id}
               title={q.title}
-              subtitle={q.subtitle}
+              subtitle={quadrantSettings[q.id] || q.subtitle}
               color={q.color}
               todos={todos[q.id]}
               onAddTodo={(text) => addTodo(q.id, text)}
@@ -231,6 +286,7 @@ export default function Home() {
               onDeleteTodo={(id) => deleteTodo(q.id, id)}
               isExpanded={expandedQuadrant === q.id}
               onExpandToggle={() => setExpandedQuadrant(expandedQuadrant === q.id ? null : q.id)}
+              onSubtitleChange={(newSubtitle) => updateSubtitle(q.id, newSubtitle)}
             />
           );
         })}

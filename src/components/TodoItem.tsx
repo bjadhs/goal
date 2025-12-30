@@ -14,13 +14,13 @@ interface TodoItemProps {
 
 export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
     return (
-        <div className="flex items-center justify-between p-2 mb-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group">
+        <div className="flex items-center justify-between p-2 mb-2 bg-card-bg border border-card-border rounded-lg hover:bg-card-hover-bg transition-colors group">
             <div className="flex items-center gap-3 flex-1">
                 <button
                     onClick={() => onToggle(todo.id)}
                     className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${todo.completed
-                            ? 'bg-green-500 border-green-500'
-                            : 'border-gray-400 hover:border-green-400'
+                        ? 'bg-green-500 border-green-500'
+                        : 'border-gray-400 dark:border-gray-500 hover:border-green-400'
                         }`}
                 >
                     {todo.completed && (
@@ -39,7 +39,7 @@ export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
                     )}
                 </button>
                 <span
-                    className={`text-sm font-medium transition-all ${todo.completed ? 'text-gray-500 line-through' : 'text-gray-100'
+                    className={`text-sm font-medium transition-all ${todo.completed ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-800 dark:text-gray-100'
                         }`}
                 >
                     {todo.text}
@@ -47,7 +47,7 @@ export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
             </div>
             <button
                 onClick={() => onDelete(todo.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all p-1"
+                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all p-1"
                 aria-label="Delete todo"
             >
                 <svg

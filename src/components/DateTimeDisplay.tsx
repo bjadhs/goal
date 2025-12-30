@@ -32,10 +32,10 @@ export default function DateTimeDisplay() {
 
     return (
         <div className="text-center">
-            <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+            <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
                 {formatTime(date)}
             </div>
-            <div className="text-gray-500 text-xs font-medium tracking-wide">
+            <div className="text-gray-600 dark:text-gray-400 text-xs font-medium tracking-wide">
                 {formatDate(date)}
             </div>
         </div>

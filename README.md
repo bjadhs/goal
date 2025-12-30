@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Goal
+
+Goal is a modern, responsive task management application built with **Next.js** and **Supabase**. It helps you organize your objectives into four key timeframes: **Daily**, **Weekly**, **Monthly**, and **Yearly**, providing a clear overview of your progress across different horizons.
+
+## Features
+
+- **Quadrant View**: Clearly separate tasks by timeframe (Daily, Weekly, Monthly, Yearly).
+- **Persistent Storage**: All data is securely stored in a Supabase PostgreSQL database.
+- **Optimistic UI**: Instant feedback on user actions (add, toggle, delete) for a snappy experience.
+- **Responsive Design**: Built with Tailwind CSS to look great on all devices.
+- **Real-time**: Leverages Supabase for data management.
+
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Language**: TypeScript
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js (v18+ recommended)
+- A Supabase account
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/bjadhs/goal.git
+   cd goal
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-## Learn More
+3. **Set up Environment Variables:**
+   Create a `.env.local` file in the root directory and add your Supabase credentials. You can find these in your Supabase project settings.
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+   
+   > **Note:** See `DEPLOYMENT.md` for example configuration values.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. **Database Setup:**
+   Run the SQL commands found in `schema.sql` in your Supabase project's SQL Editor to create the necessary table and security policies.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Vercel
+   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For detailed deployment instructions, including how to deploy to Vercel, Netlify, or Railway, please refer to [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## License
+
+This project is licensed under the MIT License.

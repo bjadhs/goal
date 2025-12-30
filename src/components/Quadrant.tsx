@@ -17,6 +17,8 @@ interface QuadrantProps {
     onAddTodo: (text: string) => void;
     onToggleTodo: (id: string) => void;
     onDeleteTodo: (id: string) => void;
+    isExpanded?: boolean;
+    onExpandToggle?: () => void;
 }
 
 export default function Quadrant({
@@ -27,6 +29,8 @@ export default function Quadrant({
     onAddTodo,
     onToggleTodo,
     onDeleteTodo,
+    isExpanded = false,
+    onExpandToggle,
 }: QuadrantProps) {
     const [inputValue, setInputValue] = useState('');
 
@@ -58,13 +62,36 @@ export default function Quadrant({
 
     return (
         <div
-            className={`flex flex-col h-full bg-gradient-to-br ${gradientClass} border rounded-2xl p-4 backdrop-blur-sm transition-all duration-300 shadow-lg min-h-0`}
+            className={`flex flex-col h-full bg-gradient-to-br ${gradientClass} border rounded-2xl p-4 backdrop-blur-sm transition-all duration-300 shadow-lg min-h-0 relative group`}
         >
-            <div className="flex items-baseline justify-between mb-3 flex-none">
-                <h2 className={`text-xl font-bold ${titleColorClass}`}>{title}</h2>
-                <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">
-                    {subtitle}
-                </p>
+            <div className="flex items-center justify-between mb-3 flex-none">
+                <div className="flex items-baseline gap-3">
+                    <h2 className={`text-xl font-bold ${titleColorClass}`}>{title}</h2>
+                    <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">
+                        {subtitle}
+                    </p>
+                </div>
+                {onExpandToggle && (
+                    <button
+                        onClick={onExpandToggle}
+                        className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        title={isExpanded ? "Collapse" : "Expand"}
+                    >
+                        {isExpanded ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                <polyline points="4 14 10 14 10 20"></polyline>
+                                <polyline points="20 10 14 10 14 4"></polyline>
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <polyline points="9 21 3 21 3 15"></polyline>
+                                <line x1="21" y1="3" x2="14" y2="10"></line>
+                                <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                        )}
+                    </button>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 pr-2 -mr-2 space-y-1 custom-scrollbar">

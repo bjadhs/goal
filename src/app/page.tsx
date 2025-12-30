@@ -37,6 +37,15 @@ export default function Home() {
   });
 
   const [isLoaded, setIsLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Clear error after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // Fetch todos from Supabase on mount
   useEffect(() => {
@@ -48,6 +57,7 @@ export default function Home() {
 
       if (error) {
         console.error('Error fetching todos:', error);
+        setError('Failed to load todos. Check your connection.');
         setIsLoaded(true);
         return;
       }
@@ -78,6 +88,7 @@ export default function Home() {
   }, []);
 
   const addTodo = async (type: QuadrantType, text: string) => {
+    setError(null);
     const newTodo: Todo = {
       id: crypto.randomUUID(),
       text,
@@ -91,15 +102,16 @@ export default function Home() {
     }));
 
     // Insert into Supabase
-    const { error } = await supabase.from('todos').insert({
+    const { error: insertError } = await supabase.from('todos').insert({
       id: newTodo.id,
       text: newTodo.text,
       completed: newTodo.completed,
       type,
     });
 
-    if (error) {
-      console.error('Error adding todo:', error);
+    if (insertError) {
+      console.error('Error adding todo:', insertError);
+      setError('Failed to save todo.');
       // Rollback on error
       setTodos((prev) => ({
         ...prev,
@@ -109,6 +121,7 @@ export default function Home() {
   };
 
   const toggleTodo = async (type: QuadrantType, id: string) => {
+    setError(null);
     // Find the current todo
     const currentTodo = todos[type].find((t) => t.id === id);
     if (!currentTodo) return;
@@ -124,13 +137,14 @@ export default function Home() {
     }));
 
     // Update in Supabase
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('todos')
       .update({ completed: newCompleted })
       .eq('id', id);
 
-    if (error) {
-      console.error('Error toggling todo:', error);
+    if (updateError) {
+      console.error('Error toggling todo:', updateError);
+      setError('Failed to update todo.');
       // Rollback on error
       setTodos((prev) => ({
         ...prev,
@@ -142,6 +156,7 @@ export default function Home() {
   };
 
   const deleteTodo = async (type: QuadrantType, id: string) => {
+    setError(null);
     // Store the todo for potential rollback
     const deletedTodo = todos[type].find((t) => t.id === id);
 
@@ -152,10 +167,11 @@ export default function Home() {
     }));
 
     // Delete from Supabase
-    const { error } = await supabase.from('todos').delete().eq('id', id);
+    const { error: deleteError } = await supabase.from('todos').delete().eq('id', id);
 
-    if (error) {
-      console.error('Error deleting todo:', error);
+    if (deleteError) {
+      console.error('Error deleting todo:', deleteError);
+      setError('Failed to delete todo.');
       // Rollback on error
       if (deletedTodo) {
         setTodos((prev) => ({
@@ -166,6 +182,17 @@ export default function Home() {
     }
   };
 
+  const [expandedQuadrant, setExpandedQuadrant] = useState<QuadrantType | null>(null);
+
+  // ... (existing useEffect and handlers)
+
+  const quadrants: { id: QuadrantType; title: string; subtitle: string; color: string }[] = [
+    { id: 'daily', title: 'Daily', subtitle: "Today's Focus", color: 'blue' },
+    { id: 'weekly', title: 'Weekly', subtitle: 'This Week', color: 'purple' },
+    { id: 'monthly', title: 'Monthly', subtitle: 'This Month', color: 'pink' },
+    { id: 'yearly', title: 'Yearly', subtitle: '2025 Goals', color: 'orange' },
+  ];
+
   if (!isLoaded) {
     return (
       <div className="h-screen w-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -175,51 +202,38 @@ export default function Home() {
   }
 
   return (
-    <main className="h-screen w-screen bg-[#0a0a0a] text-white p-4 font-sans selection:bg-blue-500/30 overflow-hidden flex flex-col">
-      <header className="flex-none mb-4 flex flex-col items-center justify-center">
+    <main className="h-screen w-screen bg-[#0a0a0a] text-white p-4 font-sans selection:bg-blue-500/30 overflow-hidden flex flex-col relative">
+      {error && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg backdrop-blur text-sm font-medium animate-in fade-in slide-in-from-top-4">
+          {error}
+        </div>
+      )}
+      <header className={`flex-none mb-4 flex flex-col items-center justify-center transition-all duration-300 ${expandedQuadrant ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100'}`}>
         <h1 className="text-3xl font-black tracking-tighter mb-1 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">
           GOAL
         </h1>
         <DateTimeDisplay />
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 w-full max-w-7xl mx-auto">
-        <Quadrant
-          title="Daily"
-          subtitle="Today's Focus"
-          color="blue"
-          todos={todos.daily}
-          onAddTodo={(text) => addTodo('daily', text)}
-          onToggleTodo={(id) => toggleTodo('daily', id)}
-          onDeleteTodo={(id) => deleteTodo('daily', id)}
-        />
-        <Quadrant
-          title="Weekly"
-          subtitle="This Week"
-          color="purple"
-          todos={todos.weekly}
-          onAddTodo={(text) => addTodo('weekly', text)}
-          onToggleTodo={(id) => toggleTodo('weekly', id)}
-          onDeleteTodo={(id) => deleteTodo('weekly', id)}
-        />
-        <Quadrant
-          title="Monthly"
-          subtitle="This Month"
-          color="pink"
-          todos={todos.monthly}
-          onAddTodo={(text) => addTodo('monthly', text)}
-          onToggleTodo={(id) => toggleTodo('monthly', id)}
-          onDeleteTodo={(id) => deleteTodo('monthly', id)}
-        />
-        <Quadrant
-          title="Yearly"
-          subtitle="2025 Goals"
-          color="orange"
-          todos={todos.yearly}
-          onAddTodo={(text) => addTodo('yearly', text)}
-          onToggleTodo={(id) => toggleTodo('yearly', id)}
-          onDeleteTodo={(id) => deleteTodo('yearly', id)}
-        />
+      <div className={`grid gap-4 flex-1 min-h-0 w-full max-w-7xl mx-auto transition-all duration-300 ${expandedQuadrant ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+        {quadrants.map((q) => {
+          if (expandedQuadrant && expandedQuadrant !== q.id) return null;
+
+          return (
+            <Quadrant
+              key={q.id}
+              title={q.title}
+              subtitle={q.subtitle}
+              color={q.color}
+              todos={todos[q.id]}
+              onAddTodo={(text) => addTodo(q.id, text)}
+              onToggleTodo={(id) => toggleTodo(q.id, id)}
+              onDeleteTodo={(id) => deleteTodo(q.id, id)}
+              isExpanded={expandedQuadrant === q.id}
+              onExpandToggle={() => setExpandedQuadrant(expandedQuadrant === q.id ? null : q.id)}
+            />
+          );
+        })}
       </div>
     </main>
   );

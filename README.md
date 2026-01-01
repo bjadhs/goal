@@ -1,30 +1,39 @@
-# Goal
+# 🎯 Goal
 
-Goal is a modern, responsive task management application built with **Next.js** and **Supabase**. It helps you organize your objectives into four key timeframes: **Daily**, **Weekly**, **Monthly**, and **Yearly**, providing a clear overview of your progress across different horizons.
+Goal is a premium, responsive task management application designed for high productivity. Built with **Next.js 15** and **Supabase**, it features a refined Eisenhower-style quadrant system to help you organize personal objectives into **Daily**, **Weekly**, **Monthly**, and **Yearly** horizons.
 
-## Features
+## ✨ Features
 
-- **Quadrant View**: Clearly separate tasks by timeframe (Daily, Weekly, Monthly, Yearly).
-- **Persistent Storage**: All data is securely stored in a Supabase PostgreSQL database.
-- **Optimistic UI**: Instant feedback on user actions (add, toggle, delete) for a snappy experience.
-- **Responsive Design**: Built with Tailwind CSS to look great on all devices.
-- **Real-time**: Leverages Supabase for data management.
+- **🛡️ Secure Authentication**: Full multi-user support with Supabase Auth (Email/Password & Google OAuth).
+- **🔒 Privacy & Security**: 
+    - **Row Level Security (RLS)**: Physical data isolation ensures you only ever see your own data.
+    - **Encryption**: Data is encrypted at rest by default.
+- **🎨 Premium UI/UX**:
+    - **Dynamic Themes**: Seamless Dark and Light mode support using `next-themes`.
+    - **Optimistic Updates**: Instant feedback for adding, toggling, and editing tasks.
+    - **Intuitive Interactions**:
+        - **Double-click** any quadrant to expand.
+        - **Click outside** to collapse back to grid view.
+        - **Inline Editing**: Just click a task name to edit it instantly.
+    - **Smart Organization**: Clear separation between active and completed tasks in expanded views.
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Framework**: [Next.js](https://nextjs.org/) (App Router)
-- **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Backend/Auth/DB**: [Supabase](https://supabase.com/) (`@supabase/ssr`)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Theme Management**: `next-themes`
+- **Icons**: `lucide-react`
 - **Language**: TypeScript
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js (v18+ recommended)
-- A Supabase account
+- Node.js (v18+)
+- A Supabase project
 
-### Installation
+### Installation & Setup
 
 1. **Clone the repository:**
    ```bash
@@ -37,30 +46,24 @@ Goal is a modern, responsive task management application built with **Next.js** 
    npm install
    ```
 
-3. **Set up Environment Variables:**
-   Create a `.env.local` file in the root directory and add your Supabase credentials. You can find these in your Supabase project settings.
-
-   ```bash
+3. **Environment Setup:**
+   Create a `.env.local` file with your credentials:
+   ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
-   
-   > **Note:** See `DEPLOYMENT.md` for example configuration values.
 
-4. **Database Setup:**
-   Run the SQL commands found in `schema.sql` in your Supabase project's SQL Editor to create the necessary table and security policies.
+4. **Database Migration:**
+   Apply the SQL schemas in your Supabase SQL Editor:
+   - `schema.sql`: Sets up the `todos` table and RLS policies.
+   - `schema_details.sql`: Sets up the `quadrant_details` table for custom subtitles.
 
-5. **Run the development server:**
+5. **Run Locally:**
    ```bash
    npm run dev
    ```
 
-   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📜 License
 
-## Deployment
+MIT License. Designed with ❤️ for productivity.
 
-For detailed deployment instructions, including how to deploy to Vercel, Netlify, or Railway, please refer to [DEPLOYMENT.md](DEPLOYMENT.md).
-
-## License
-
-This project is licensed under the MIT License.

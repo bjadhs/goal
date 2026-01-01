@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Quadrant from '@/components/Quadrant';
 import Header from '@/components/Header';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 
 interface Todo {
   id: string;
@@ -39,6 +39,8 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quadrantSettings, setQuadrantSettings] = useState<Record<string, string>>({});
+  const [user, setUser] = useState<any>(null);
+  const supabase = createClient();
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -50,15 +52,18 @@ export default function Home() {
 
   // Fetch todos from Supabase on mount
   useEffect(() => {
-    const fetchTodos = async () => {
+    const fetchTodos = async (user: any) => {
+      if (!user) return;
       const { data: todosData, error: todosError } = await supabase
         .from('todos')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       const { data: settingsData, error: settingsError } = await supabase
         .from('quadrant_details')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       if (todosError) {
         console.error('Error fetching todos:', todosError);
@@ -102,7 +107,17 @@ export default function Home() {
       setIsLoaded(true);
     };
 
-    fetchTodos();
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        await fetchTodos(user);
+      } else {
+        setIsLoaded(true);
+      }
+    };
+
+    setup();
   }, []);
 
   const addTodo = async (type: QuadrantType, text: string) => {
@@ -125,6 +140,7 @@ export default function Home() {
       text: newTodo.text,
       completed: newTodo.completed,
       type,
+      user_id: user?.id,
     });
 
     if (insertError) {
@@ -199,6 +215,38 @@ export default function Home() {
       }
     }
   };
+  const updateTodo = async (type: QuadrantType, id: string, newText: string) => {
+    setError(null);
+    // Find the current todo
+    const currentTodo = todos[type].find((t) => t.id === id);
+    if (!currentTodo) return;
+
+    // Optimistic update
+    setTodos((prev) => ({
+      ...prev,
+      [type]: prev[type].map((t) =>
+        t.id === id ? { ...t, text: newText } : t
+      ),
+    }));
+
+    // Update in Supabase
+    const { error: updateError } = await supabase
+      .from('todos')
+      .update({ text: newText })
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('Error updating todo:', updateError);
+      setError('Failed to update todo text.');
+      // Rollback on error
+      setTodos((prev) => ({
+        ...prev,
+        [type]: prev[type].map((t) =>
+          t.id === id ? { ...t, text: currentTodo.text } : t
+        ),
+      }));
+    }
+  };
 
   const updateSubtitle = async (type: QuadrantType, newSubtitle: string) => {
     // Optimistic update
@@ -209,7 +257,7 @@ export default function Home() {
 
     const { error } = await supabase
       .from('quadrant_details')
-      .upsert({ type, subtitle: newSubtitle })
+      .upsert({ type, subtitle: newSubtitle, user_id: user?.id })
       .select();
 
     if (error) {
@@ -270,7 +318,9 @@ export default function Home() {
 
       <Header isQuadrantExpanded={!!expandedQuadrant} />
 
-      <div className={`grid gap-4 flex-1 min-h-0 w-full max-w-7xl mx-auto transition-all duration-300 ${expandedQuadrant ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+      <div
+        onClick={() => setExpandedQuadrant(null)}
+        className={`grid gap-4 flex-1 min-h-0 w-full max-w-7xl mx-auto transition-all duration-300 ${expandedQuadrant ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
         {quadrants.map((q) => {
           if (expandedQuadrant && expandedQuadrant !== q.id) return null;
 
@@ -284,6 +334,7 @@ export default function Home() {
               onAddTodo={(text) => addTodo(q.id, text)}
               onToggleTodo={(id) => toggleTodo(q.id, id)}
               onDeleteTodo={(id) => deleteTodo(q.id, id)}
+              onUpdateTodo={(id, newText) => updateTodo(q.id, id, newText)}
               isExpanded={expandedQuadrant === q.id}
               onExpandToggle={() => setExpandedQuadrant(expandedQuadrant === q.id ? null : q.id)}
               onSubtitleChange={(newSubtitle) => updateSubtitle(q.id, newSubtitle)}
